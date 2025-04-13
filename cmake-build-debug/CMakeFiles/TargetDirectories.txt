@@ -1,0 +1,10 @@
+/Users/prog-yammer/ITMO/thread/TicTacToe/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/prog-yammer/ITMO/thread/TicTacToe/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/prog-yammer/ITMO/thread/TicTacToe/cmake-build-debug/src/CMakeFiles/TicTacToe_lib.dir
+/Users/prog-yammer/ITMO/thread/TicTacToe/cmake-build-debug/src/CMakeFiles/TicTacToe.dir
+/Users/prog-yammer/ITMO/thread/TicTacToe/cmake-build-debug/src/CMakeFiles/edit_cache.dir
+/Users/prog-yammer/ITMO/thread/TicTacToe/cmake-build-debug/src/CMakeFiles/rebuild_cache.dir
+/Users/prog-yammer/ITMO/thread/TicTacToe/cmake-build-debug/tests/CMakeFiles/GameTests.dir
+/Users/prog-yammer/ITMO/thread/TicTacToe/cmake-build-debug/tests/CMakeFiles/WsTests.dir
+/Users/prog-yammer/ITMO/thread/TicTacToe/cmake-build-debug/tests/CMakeFiles/edit_cache.dir
+/Users/prog-yammer/ITMO/thread/TicTacToe/cmake-build-debug/tests/CMakeFiles/rebuild_cache.dir
