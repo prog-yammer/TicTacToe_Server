@@ -10,10 +10,11 @@ add_library(TicTacToe_lib
         game/player_manager.h
         game/notification.h
         game/common.h
-        web/command_code.h
+        web/common/command_code.h
 )
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} main.cpp
+        web/common/tools.h)
 
 target_link_libraries(${PROJECT_NAME} TicTacToe_lib
         ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_REGEX_LIBRARY} ${Boost_SYSTEM_LIBRARY})

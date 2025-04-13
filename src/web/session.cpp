@@ -1,5 +1,5 @@
 #include "session.h"
-#include "command_code.h"
+#include "common/command_code.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/uuid/uuid_io.hpp>

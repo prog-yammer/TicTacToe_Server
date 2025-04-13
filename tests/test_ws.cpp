@@ -3,15 +3,11 @@
 #include <boost/format.hpp>
 
 #include "../src/web/server.h"
-#include "../src/web/command_code.h"
+#include "../src/web/common/command_code.h"
+#include "../src/web/common/tools.h"
 
 using tcp = boost::asio::ip::tcp;
 namespace websocket = boost::beast::websocket;
-
-struct Message {
-    OutCommandCode code;
-    std::string message;
-};
 
 struct TestClient {
     explicit TestClient(boost::asio::io_context& ioc)
@@ -42,34 +38,14 @@ struct TestClient {
 
     Message receiveMessage()
     {
-        auto message = receiveInputMessage();
-        return {
-            .code = message.first,
-            .message = message.second,
-        };
-    }
-
-    ErrorCode receiveError()
-    {
-        auto message = receiveInputMessage();
-        if (message.first != OutCommandCode::ERROR)
-            throw std::exception();
-        return static_cast<ErrorCode>(std::stoi(message.second));
-    }
-
-private:
-    std::pair<OutCommandCode, std::string> receiveInputMessage()
-    {
         boost::beast::flat_buffer buffer;
         ws_.read(buffer);
         auto data = boost::beast::buffers_to_string(buffer.data());
-        size_t pos = data.find(' ');
-        if (pos != std::string::npos)
-            return {static_cast<OutCommandCode>(std::stoi(data.substr(0, pos))), data.substr(pos + 1)};
-
-        return {static_cast<OutCommandCode>(std::stoi(data)), ""};
+        
+        return getMessage(data);
     }
 
+private:
     tcp::resolver resolver_;
     websocket::stream<tcp::socket> ws_;
 };
@@ -163,30 +139,30 @@ BOOST_FIXTURE_TEST_CASE(IncorrectCommandTest, WsTestFixture) // TODO
     connectClients();
 
     client1.sendMessage("what's what?");
-    auto errorCode = client1.receiveError();
-    BOOST_CHECK_EQUAL(errorCode, ErrorCode::INCORRECT_FORMAT);
+    auto message = client1.receiveMessage();
+    BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::INCORRECT_FORMAT);
 
     client1.sendMessage(InCommandCode::JOIN_GAME);
-    errorCode = client1.receiveError();
-    BOOST_CHECK_EQUAL(errorCode, ErrorCode::INCORRECT_FORMAT);
+    message = client1.receiveMessage();
+    BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::INCORRECT_FORMAT);
 
     client1.sendMessage(InCommandCode::JOIN_GAME, "gameId");
-    errorCode = client1.receiveError();
-    BOOST_CHECK_EQUAL(errorCode, ErrorCode::INCORRECT_FORMAT);
+    message = client1.receiveMessage();
+    BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::INCORRECT_FORMAT);
 
     createGame();
 
     client1.sendMessage(InCommandCode::MOVE);
-    errorCode = client1.receiveError();
-    BOOST_CHECK_EQUAL(errorCode, ErrorCode::INCORRECT_FORMAT);
+    message = client1.receiveMessage();
+    BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::INCORRECT_FORMAT);
 
     client1.sendMessage(InCommandCode::MOVE, "0");
-    errorCode = client1.receiveError();
-    BOOST_CHECK_EQUAL(errorCode, ErrorCode::INCORRECT_FORMAT);
+    message = client1.receiveMessage();
+    BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::INCORRECT_FORMAT);
 
     client1.sendMessage(InCommandCode::MOVE, "0 zero");
-    errorCode = client1.receiveError();
-    BOOST_CHECK_EQUAL(errorCode, ErrorCode::INCORRECT_FORMAT);
+    message = client1.receiveMessage();
+    BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::INCORRECT_FORMAT);
 }
 
 BOOST_FIXTURE_TEST_CASE(InGameCommandOutsideGameErrorsTest, WsTestFixture)
@@ -194,12 +170,12 @@ BOOST_FIXTURE_TEST_CASE(InGameCommandOutsideGameErrorsTest, WsTestFixture)
     connectClients();
 
     client1.sendMessage(InCommandCode::LEAVE_GAME);
-    auto errorCode = client1.receiveError();
-    BOOST_CHECK_EQUAL(errorCode, ErrorCode::ERROR_LEAVE);
+    auto message = client1.receiveMessage();
+    BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::ERROR_LEAVE);
 
     client1.sendMessage(InCommandCode::MOVE, "0 0");
-    errorCode = client1.receiveError();
-    BOOST_CHECK_EQUAL(errorCode, ErrorCode::ERROR_MOVE);
+    message = client1.receiveMessage();
+    BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::ERROR_MOVE);
 }
 
 BOOST_FIXTURE_TEST_CASE(OutGameCommandInsideGameErrorsTest, WsTestFixture)
@@ -208,12 +184,12 @@ BOOST_FIXTURE_TEST_CASE(OutGameCommandInsideGameErrorsTest, WsTestFixture)
     auto gameId = createGame();
 
     client1.sendMessage(InCommandCode::CREATE_GAME);
-    auto errorCode = client1.receiveError();
-    BOOST_CHECK_EQUAL(errorCode, ErrorCode::ERROR_CREATE);
+    auto message = client1.receiveMessage();
+    BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::ERROR_CREATE);
 
     client1.sendMessage(InCommandCode::JOIN_GAME, gameId);
-    errorCode = client1.receiveError();
-    BOOST_CHECK_EQUAL(errorCode, ErrorCode::ERROR_JOIN);
+    message = client1.receiveMessage();
+    BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::ERROR_JOIN);
 }
 
 BOOST_FIXTURE_TEST_CASE(LeaveGameTest, WsTestFixture)
@@ -282,17 +258,17 @@ BOOST_FIXTURE_TEST_CASE(TurnMoveTest, WsTestFixture)
     createGame();
 
     client2.sendMessage(InCommandCode::MOVE, "0 0");
-    auto errorCode = client2.receiveError();
-    BOOST_CHECK_EQUAL(errorCode, ErrorCode::ERROR_MOVE);
+    auto message = client2.receiveMessage();
+    BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::ERROR_MOVE);
 
     client1.sendMessage(InCommandCode::MOVE, "0 0");
     client1.receiveMessage();
 
     client1.sendMessage(InCommandCode::MOVE, "0 1");
-    errorCode = client1.receiveError();
-    BOOST_CHECK_EQUAL(errorCode, ErrorCode::ERROR_MOVE);
+    message = client1.receiveMessage();
+    BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::ERROR_MOVE);
 
-    auto message = client2.receiveMessage();
+    message = client2.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::OPPONENT_MOVED);
     BOOST_CHECK_EQUAL(message.message, "0 0 X " + clientId1);
 }
@@ -303,28 +279,28 @@ BOOST_FIXTURE_TEST_CASE(IncorrectMoveTest, WsTestFixture)
     createGame();
 
     client1.sendMessage(InCommandCode::MOVE, "-1 0");
-    auto errorCode = client1.receiveError();
-    BOOST_CHECK_EQUAL(errorCode, ErrorCode::ERROR_MOVE);
+    auto message = client1.receiveMessage();
+    BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::ERROR_MOVE);
 
     client1.sendMessage(InCommandCode::MOVE, "0 -1");
-    errorCode = client1.receiveError();
-    BOOST_CHECK_EQUAL(errorCode, ErrorCode::ERROR_MOVE);
+    message = client1.receiveMessage();
+    BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::ERROR_MOVE);
 
     client1.sendMessage(InCommandCode::MOVE, "4 0");
-    errorCode = client1.receiveError();
-    BOOST_CHECK_EQUAL(errorCode, ErrorCode::ERROR_MOVE);
+    message = client1.receiveMessage();
+    BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::ERROR_MOVE);
 
     client1.sendMessage(InCommandCode::MOVE, "0 4");
-    errorCode = client1.receiveError();
-    BOOST_CHECK_EQUAL(errorCode, ErrorCode::ERROR_MOVE);
+    message = client1.receiveMessage();
+    BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::ERROR_MOVE);
 
     client1.sendMessage(InCommandCode::MOVE, "0 0");
     client1.receiveMessage();
     client2.receiveMessage();
 
     client2.sendMessage(InCommandCode::MOVE, "0 0");
-    errorCode = client2.receiveError();
-    BOOST_CHECK_EQUAL(errorCode, ErrorCode::ERROR_MOVE);
+    message = client2.receiveMessage();
+    BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::ERROR_MOVE);
 }
 
 BOOST_FIXTURE_TEST_CASE(WinGameTest, WsTestFixture)
