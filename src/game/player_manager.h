@@ -8,9 +8,9 @@
 
 class PlayerManager {
 public:
-    std::shared_ptr<Player> createPlayer()
+    std::shared_ptr<Player> createPlayer(const std::string& nickname)
     {
-        return std::make_shared<Player>(generator_());
+        return std::make_shared<Player>(generator_(), nickname);
     }
 
 private:

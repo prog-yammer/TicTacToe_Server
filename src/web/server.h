@@ -21,7 +21,7 @@ private:
     boost::asio::io_context ioc_;
     ip::tcp::acceptor acceptor_;
 
-    PlayerManager playerFactory_;
+    std::shared_ptr<PlayerManager> playerManager_;
     std::shared_ptr<GameManager> gameManager_;
 
     size_t threadCount_;

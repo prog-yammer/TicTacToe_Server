@@ -17,12 +17,13 @@ public:
     bool leavePlayerFromGame(std::shared_ptr<Player> player);
 
     bool makeMove(std::shared_ptr<Player> player, int x, int y);
+    std::vector<std::shared_ptr<Game>> getWaitingGames() const;
 
-    std::shared_ptr<Game> getGame(const Id& gameId);
+    std::shared_ptr<Game> getGame(const Id& gameId) const;
     void removeGame(const Id& gameId);
 private:
     std::unordered_map<Id, std::shared_ptr<Game>> games_;
-    std::shared_mutex mutex_;
+    mutable std::shared_mutex mutex_;
 
     boost::uuids::random_generator generator_;
 };

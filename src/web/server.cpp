@@ -12,6 +12,7 @@ namespace ws = boost::beast::websocket;
 Server::Server(size_t threadCount, size_t port)
     : pool_(threadCount)
     , acceptor_(ioc_)
+    , playerManager_(std::make_shared<PlayerManager>())
     , gameManager_(std::make_shared<GameManager>())
     , threadCount_(threadCount)
     , port_(port)
@@ -51,8 +52,7 @@ void Server::onAcceptAsync()
                 std::cerr << ec.message() << std::endl;
                 return;
             }
-//            std::this_thread::sleep_for(std::chrono::seconds(5));
-            std::make_shared<Session>(ws, playerFactory_.createPlayer(), gameManager_)->start();
+            std::make_shared<Session>(ws, playerManager_, gameManager_)->start();
             onAcceptAsync();
         });
 }

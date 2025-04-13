@@ -1,5 +1,7 @@
 #include "game_manager.h"
 
+#include <algorithm>
+
 const Id& GameManager::createGame()
 {
     std::unique_lock lock(mutex_);
@@ -55,7 +57,19 @@ bool GameManager::makeMove(std::shared_ptr<Player> player, int x, int y)
     return result;
 }
 
-std::shared_ptr<Game> GameManager::getGame(const Id& gameId)
+std::vector<std::shared_ptr<Game>> GameManager::getWaitingGames() const
+{
+    std::shared_lock lock(mutex_);
+    std::vector<std::shared_ptr<Game>> result;
+    for (const auto& [_, game] : games_) {
+        if (!game->isOver() && game->player1() && !game->player2()) {
+            result.push_back(game);
+        }
+    }
+    return result;
+}
+
+std::shared_ptr<Game> GameManager::getGame(const Id& gameId) const
 {
     std::shared_lock lock(mutex_);
     auto it = games_.find(gameId);

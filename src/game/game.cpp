@@ -26,6 +26,16 @@ bool Game::isOver() const
     return isOver_;
 }
 
+std::shared_ptr<Player> Game::player1() const
+{
+    return player1_;
+}
+
+std::shared_ptr<Player> Game::player2() const
+{
+    return player2_;
+}
+
 bool Game::join(std::shared_ptr<Player> player)
 {
     std::lock_guard lock(gameMutex_);

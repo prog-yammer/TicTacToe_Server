@@ -1,13 +1,18 @@
 #include "player.h"
 
-Player::Player(Id id)
+Player::Player(Id id, const std::string& nickname)
     : id_(std::move(id))
+    , nickname_(nickname)
     , curGameId_(std::nullopt)
 {}
 
 const Id& Player::id() const
 {
     return id_;
+}
+
+const std::string& Player::nickname() const {
+    return nickname_;
 }
 
 bool Player::isInGame() const

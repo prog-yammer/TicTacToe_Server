@@ -10,9 +10,10 @@
 
 class Player {
 public:
-    explicit Player(Id id);
+    explicit Player(Id id, const std::string& nickname);
 
     const Id& id() const;
+    const std::string& nickname() const;
     bool isInGame() const;
     std::optional<Id> curGameId() const;
 
@@ -24,6 +25,7 @@ public:
 
 private:
     Id id_;
+    std::string nickname_;
     std::optional<Id> curGameId_;
 
     NotificationHandler notificationHandler_;

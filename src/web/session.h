@@ -2,6 +2,7 @@
 
 #include "../game/player.h"
 #include "../game/game_manager.h"
+#include "../game/player_manager.h"
 
 #include <boost/beast.hpp>
 #include <boost/beast/websocket.hpp>
@@ -17,7 +18,7 @@ class Session : public std::enable_shared_from_this<Session> {
 public:
     explicit Session(
             std::shared_ptr<ws::stream<boost::beast::tcp_stream>> ws,
-            std::shared_ptr<Player> player,
+            std::shared_ptr<PlayerManager> player,
             std::shared_ptr<GameManager> gameManager);
     ~Session();
 
@@ -38,6 +39,7 @@ private:
     std::deque<std::string> writeMessages_;
 
     std::shared_ptr<Player> player_;
+    std::shared_ptr<PlayerManager> playerManager_;
     std::shared_ptr<GameManager> gameManager_;
 
     boost::uuids::string_generator uuidStrGen_;

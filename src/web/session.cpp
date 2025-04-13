@@ -10,26 +10,21 @@
 #include <utility>
 
 Session::Session(std::shared_ptr<ws::stream<boost::beast::tcp_stream>> ws,
-                 std::shared_ptr<Player> player,
+                 std::shared_ptr<PlayerManager> playerManager,
                  std::shared_ptr<GameManager> gameManager)
     : ws_(std::move(ws))
-    , player_(std::move(player))
+    , playerManager_(playerManager)
     , gameManager_(gameManager)
 {}
 
 Session::~Session()
 {
-    gameManager_->leavePlayerFromGame(player_);
+    if (player_)
+        gameManager_->leavePlayerFromGame(player_);
 }
 
 void Session::start()
 {
-    player_->setNotificationHandler([weakSelf = std::weak_ptr(shared_from_this())](const Notification& notification)
-        {
-            if (auto self = weakSelf.lock())
-                self->writeAsync(processNotification(notification, self));
-        });
-
     ws_->async_accept([self = shared_from_this(), ws = ws_](const boost::beast::error_code& ec) {
         if (ec) {
             if (ec == boost::asio::error::operation_aborted) {
@@ -39,7 +34,6 @@ void Session::start()
             return;
         }
 
-        self->writeAsync((boost::format("%s %s") % OutCommandCode::PLAYER_CREATED % self->player_->id()).str());
         self->onReadAsync();
     });
 }
@@ -105,7 +99,32 @@ std::string Session::processCommand(const std::string& command, std::shared_ptr<
 
     try {
         auto code = static_cast<InCommandCode>(std::stoi(parts[0]));
+
+        if (code != InCommandCode::AUTH && !session->player_) {
+            ss << OutCommandCode::ERROR << ' ' << ErrorCode::ERROR_NOT_AUTH;
+            return ss.str();
+        }
+
         switch (code) {
+            case AUTH: {
+                if (session->player_) {
+                    ss << OutCommandCode::ERROR << ' ' << ErrorCode::ERROR_ALREADY_AUTH;
+                    break;
+                }
+                if (parts.size() < 2) {
+                    ss << OutCommandCode::ERROR << ' ' << ErrorCode::INCORRECT_FORMAT;
+                    break;
+                }
+                session->player_ = session->playerManager_->createPlayer(parts[1]);
+                session->player_->setNotificationHandler([weakSelf = std::weak_ptr(session)](const Notification& notification)
+                    {
+                        if (auto self = weakSelf.lock())
+                            self->writeAsync(processNotification(notification, self));
+                    });
+
+                ss << OutCommandCode::PLAYER_AUTHED << ' ' << session->player_->id();
+                break;
+            }
             case CREATE_GAME: {
                 if (session->player_->isInGame()) {
                     ss << OutCommandCode::ERROR << ' ' << ErrorCode::ERROR_CREATE;
@@ -117,6 +136,14 @@ std::string Session::processCommand(const std::string& command, std::shared_ptr<
                     ss << OutCommandCode::ERROR << ' ' << ErrorCode::ERROR_CREATE;
                 } else {
                     ss << OutCommandCode::GAME_CREATED << ' ' << gameId;
+                }
+                break;
+            }
+            case GET_GAMES: {
+                ss << OutCommandCode::GAME_LIST;
+                auto games = session->gameManager_->getWaitingGames();
+                for (const auto& game : games) {
+                    ss << ' ' << game->id() << '|' << game->player1()->nickname();
                 }
                 break;
             }

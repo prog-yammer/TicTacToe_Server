@@ -1,30 +1,35 @@
 #pragma once
 
 enum InCommandCode {
-    CREATE_GAME = 0,
-    JOIN_GAME   = 1,
-    LEAVE_GAME  = 2,
-    MOVE        = 3,
+    AUTH        = 0,
+    CREATE_GAME = 1,
+    GET_GAMES   = 2,
+    JOIN_GAME   = 3,
+    LEAVE_GAME  = 4,
+    MOVE        = 5,
 };
 
 enum OutCommandCode {
     ERROR           = -1,
-    PLAYER_CREATED  = 0,
+    PLAYER_AUTHED   = 0,
     GAME_CREATED    = 1,
-    JOINED_GAME     = 2,
-    LEFT_GAME       = 3,
-    MOVED           = 4,
-    OPPONENT_JOINED = 5,
-    OPPONENT_LEFT   = 6,
-    OPPONENT_MOVED  = 7,
-    GAME_ENDED      = 8,
+    GAME_LIST       = 2,
+    JOINED_GAME     = 3,
+    LEFT_GAME       = 4,
+    MOVED           = 5,
+    OPPONENT_JOINED = 6,
+    OPPONENT_LEFT   = 7,
+    OPPONENT_MOVED  = 8,
+    GAME_ENDED      = 9,
 };
 
 enum ErrorCode {
-    UNKNOWN_COMMAND  = 0,
-    INCORRECT_FORMAT = 1,
-    ERROR_JOIN       = 2,
-    ERROR_CREATE     = 3,
-    ERROR_LEAVE      = 4,
-    ERROR_MOVE       = 5,
+    UNKNOWN_COMMAND    = 0,
+    INCORRECT_FORMAT   = 1,
+    ERROR_NOT_AUTH     = 2,
+    ERROR_ALREADY_AUTH = 2,
+    ERROR_JOIN         = 3,
+    ERROR_CREATE       = 4,
+    ERROR_LEAVE        = 5,
+    ERROR_MOVE         = 6,
 };

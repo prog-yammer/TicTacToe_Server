@@ -18,6 +18,9 @@ public:
     const Id& id() const;
     bool isOver() const;
 
+    std::shared_ptr<Player> player1() const;
+    std::shared_ptr<Player> player2() const;
+
     bool join(std::shared_ptr<Player> player);
     bool leave(std::shared_ptr<Player> player);
     bool makeMove(Id playerId, int x, int y);

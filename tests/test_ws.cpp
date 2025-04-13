@@ -103,8 +103,10 @@ struct WsTestFixture {
     void connectClients()
     {
         client1.connect();
+        client1.sendMessage(InCommandCode::AUTH, "player1");
         clientId1 = client1.receiveMessage().message;
         client2.connect();
+        client2.sendMessage(InCommandCode::AUTH, "player2");
         clientId2 = client2.receiveMessage().message;
     }
 
@@ -129,12 +131,12 @@ struct WsTestFixture {
 
 BOOST_GLOBAL_FIXTURE(WsTestGlobalFixture);
 
-BOOST_FIXTURE_TEST_CASE(ConnectionTest, WsTestFixture)
+BOOST_FIXTURE_TEST_CASE(AuthTest, WsTestFixture)
 {
     client1.connect();
+    client1.sendMessage(InCommandCode::AUTH, "player");
     auto message = client1.receiveMessage();
-
-    BOOST_CHECK_EQUAL(message.code, OutCommandCode::PLAYER_CREATED);
+    BOOST_CHECK_EQUAL(message.code, OutCommandCode::PLAYER_AUTHED);
 }
 
 BOOST_FIXTURE_TEST_CASE(JoinGameTest, WsTestFixture)
