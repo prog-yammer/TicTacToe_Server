@@ -10,9 +10,14 @@ class PlayerManager {
 public:
     std::shared_ptr<Player> createPlayer(const std::string& nickname)
     {
-        return std::make_shared<Player>(generator_(), nickname);
+        return std::make_shared<Player>(getNewId(), nickname);
     }
 
 private:
-    boost::uuids::random_generator generator_;
+    uint32_t getNewId()
+    {
+        return idCounter_++;
+    }
+
+    std::atomic<uint32_t> idCounter_;
 };

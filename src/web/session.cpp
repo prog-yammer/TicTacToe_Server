@@ -148,7 +148,7 @@ std::string Session::processCommand(const std::string& command, std::shared_ptr<
                 break;
             }
             case JOIN_GAME: {
-                auto gameId = session->uuidStrGen_(parts[1]);
+                auto gameId = std::stoul(parts[1]);
                 bool res = session->gameManager_->addPlayerToGame(session->player_, gameId);
                 if (!res) {
                     ss << OutCommandCode::ERROR << ' ' << ErrorCode::ERROR_JOIN;
@@ -194,19 +194,19 @@ std::string Session::processCommand(const std::string& command, std::shared_ptr<
 std::string Session::processNotification(const Notification& notification, std::shared_ptr<Session> session)
 {
     std::stringstream ss;
-    std::string opponentIdStr = (notification.playerId ? boost::uuids::to_string(*notification.playerId) : "");
+    std::string opponentNickname = notification.playerNickname;
     switch (notification.type) {
         case Notification::Type::PlayerJoined:
-            ss << OutCommandCode::OPPONENT_JOINED << ' ' << opponentIdStr;
+            ss << OutCommandCode::OPPONENT_JOINED << ' ' << opponentNickname;
             break;
         case Notification::Type::PlayerLeft:
-            ss << OutCommandCode::OPPONENT_LEFT << ' ' << opponentIdStr;
+            ss << OutCommandCode::OPPONENT_LEFT << ' ' << opponentNickname;
             break;
         case Notification::Type::PlayerMoved:
-            ss << OutCommandCode::OPPONENT_MOVED << ' ' << notification.extraInfo << ' ' << opponentIdStr;
+            ss << OutCommandCode::OPPONENT_MOVED << ' ' << notification.extraInfo << ' ' << opponentNickname;
             break;
         case Notification::Type::GameEnded:
-            ss << OutCommandCode::GAME_ENDED << ' ' << (opponentIdStr.empty() ? "draw" : opponentIdStr);
+            ss << OutCommandCode::GAME_ENDED << ' ' << (opponentNickname.empty() ? "draw" : opponentNickname);
             break;
     }
 

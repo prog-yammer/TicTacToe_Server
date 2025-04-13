@@ -42,7 +42,7 @@ struct TestClient {
         ws_.read(buffer);
         auto data = boost::beast::buffers_to_string(buffer.data());
         
-        return getMessage(data);
+        return getInMessage(data);
     }
 
 private:
@@ -79,10 +79,10 @@ struct WsTestFixture {
     void connectClients()
     {
         client1.connect();
-        client1.sendMessage(InCommandCode::AUTH, "player1");
+        client1.sendMessage(InCommandCode::AUTH, nickname1);
         clientId1 = client1.receiveMessage().message;
         client2.connect();
-        client2.sendMessage(InCommandCode::AUTH, "player2");
+        client2.sendMessage(InCommandCode::AUTH, nickname2);
         clientId2 = client2.receiveMessage().message;
     }
 
@@ -103,6 +103,9 @@ struct WsTestFixture {
 
     std::string clientId1;
     std::string clientId2;
+
+    std::string nickname1 = "p1";
+    std::string nickname2 = "p2";
 };
 
 BOOST_GLOBAL_FIXTURE(WsTestGlobalFixture);
@@ -131,10 +134,10 @@ BOOST_FIXTURE_TEST_CASE(JoinGameTest, WsTestFixture)
 
     message = client1.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::OPPONENT_JOINED);
-    BOOST_CHECK_EQUAL(message.message, clientId2);
+    BOOST_CHECK_EQUAL(message.message, nickname2);
 }
 
-BOOST_FIXTURE_TEST_CASE(IncorrectCommandTest, WsTestFixture) // TODO
+BOOST_FIXTURE_TEST_CASE(IncorrectCommandTest, WsTestFixture)
 {
     connectClients();
 
@@ -200,18 +203,18 @@ BOOST_FIXTURE_TEST_CASE(LeaveGameTest, WsTestFixture)
     client1.sendMessage(InCommandCode::LEAVE_GAME);
     auto message = client1.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::GAME_ENDED);
-    BOOST_CHECK_EQUAL(message.message, clientId2);
+    BOOST_CHECK_EQUAL(message.message, nickname2);
 
     message = client1.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::LEFT_GAME);
 
     message = client2.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::OPPONENT_LEFT);
-    BOOST_CHECK_EQUAL(message.message, clientId1);
+    BOOST_CHECK_EQUAL(message.message, nickname1);
 
     message = client2.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::GAME_ENDED);
-    BOOST_CHECK_EQUAL(message.message, clientId2);
+    BOOST_CHECK_EQUAL(message.message, nickname2);
 }
 
 BOOST_FIXTURE_TEST_CASE(DisconnectFromGameTest, WsTestFixture)
@@ -223,11 +226,11 @@ BOOST_FIXTURE_TEST_CASE(DisconnectFromGameTest, WsTestFixture)
 
     auto message = client2.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::OPPONENT_LEFT);
-    BOOST_CHECK_EQUAL(message.message, clientId1);
+    BOOST_CHECK_EQUAL(message.message, nickname1);
 
     message = client2.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::GAME_ENDED);
-    BOOST_CHECK_EQUAL(message.message, clientId2);
+    BOOST_CHECK_EQUAL(message.message, nickname2);
 }
 
 BOOST_FIXTURE_TEST_CASE(MakeMoveTest, WsTestFixture)
@@ -241,7 +244,7 @@ BOOST_FIXTURE_TEST_CASE(MakeMoveTest, WsTestFixture)
 
     message = client2.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::OPPONENT_MOVED);
-    BOOST_CHECK_EQUAL(message.message, "0 0 X " + clientId1);
+    BOOST_CHECK_EQUAL(message.message, "0 0 X " + nickname1);
 
     client2.sendMessage(InCommandCode::MOVE, "0 1");
     message = client2.receiveMessage();
@@ -249,7 +252,7 @@ BOOST_FIXTURE_TEST_CASE(MakeMoveTest, WsTestFixture)
 
     message = client1.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::OPPONENT_MOVED);
-    BOOST_CHECK_EQUAL(message.message, "0 1 O " + clientId2);
+    BOOST_CHECK_EQUAL(message.message, "0 1 O " + nickname2);
 }
 
 BOOST_FIXTURE_TEST_CASE(TurnMoveTest, WsTestFixture)
@@ -270,7 +273,7 @@ BOOST_FIXTURE_TEST_CASE(TurnMoveTest, WsTestFixture)
 
     message = client2.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::OPPONENT_MOVED);
-    BOOST_CHECK_EQUAL(message.message, "0 0 X " + clientId1);
+    BOOST_CHECK_EQUAL(message.message, "0 0 X " + nickname1);
 }
 
 BOOST_FIXTURE_TEST_CASE(IncorrectMoveTest, WsTestFixture)
@@ -329,11 +332,11 @@ BOOST_FIXTURE_TEST_CASE(WinGameTest, WsTestFixture)
 
     auto message = client1.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::GAME_ENDED);
-    BOOST_CHECK_EQUAL(message.message, clientId1);
+    BOOST_CHECK_EQUAL(message.message, nickname1);
 
     message = client2.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::GAME_ENDED);
-    BOOST_CHECK_EQUAL(message.message, clientId1);
+    BOOST_CHECK_EQUAL(message.message, nickname1);
 }
 
 BOOST_FIXTURE_TEST_CASE(DrawGameTest, WsTestFixture)

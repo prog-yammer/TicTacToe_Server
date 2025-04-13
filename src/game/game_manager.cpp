@@ -5,7 +5,7 @@
 const Id& GameManager::createGame()
 {
     std::unique_lock lock(mutex_);
-    auto gameId = generator_();
+    auto gameId = getNewId();
     auto game = std::make_shared<Game>(gameId);
     games_.emplace(gameId, game);
 

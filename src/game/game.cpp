@@ -48,7 +48,7 @@ bool Game::join(std::shared_ptr<Player> player)
         player2_ = player;
         player1_->notify(Notification {
             .type = Notification::Type::PlayerJoined,
-            .playerId = player->id(),
+            .playerNickname = player->nickname(),
         });
     } else {
         return false;
@@ -68,7 +68,7 @@ bool Game::leave(std::shared_ptr<Player> player) {
         winnerId = winner->id();
         winner->notify(Notification{
                 .type = Notification::Type::PlayerLeft,
-                .playerId = player->id(),
+                .playerNickname = player->nickname(),
         });
     }
 
@@ -89,7 +89,7 @@ bool Game::makeMove(Id playerId, int x, int y)
     auto otherPlayer = (player1_->id() == playerId) ? player2_ : player1_;
     otherPlayer->notify(Notification {
         .type = Notification::Type::PlayerMoved,
-        .playerId = playerId,
+        .playerNickname = (player1_->id() == playerId) ? player1_->nickname() : player2_->nickname(),
         .extraInfo = (boost::format("%d %d %s") % x % y % (board_[x][y] == Cell::X ? 'X' : 'O')).str()
     });
 
@@ -145,7 +145,7 @@ void Game::endGame()
 
     Notification notification {
         .type = Notification::Type::GameEnded,
-        .playerId = winnerId,
+        .playerNickname = winnerId ? ((player1_->id() == winnerId) ? player1_->nickname() : player2_->nickname()) : "",
     };
 
     if (player1_) {

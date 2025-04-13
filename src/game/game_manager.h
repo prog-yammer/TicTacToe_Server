@@ -22,8 +22,13 @@ public:
     std::shared_ptr<Game> getGame(const Id& gameId) const;
     void removeGame(const Id& gameId);
 private:
+    uint32_t getNewId()
+    {
+        return idCounter_++;
+    }
+
     std::unordered_map<Id, std::shared_ptr<Game>> games_;
     mutable std::shared_mutex mutex_;
 
-    boost::uuids::random_generator generator_;
+    std::atomic<uint32_t> idCounter_;
 };

@@ -11,7 +11,7 @@ struct Message
     std::string message;
 };
 
-Message getMessage(const std::string& data)
+Message getInMessage(const std::string& data)
 {
     size_t pos = data.find(' ');
     auto code = static_cast<OutCommandCode>(std::stoi(data.substr(0, pos)));

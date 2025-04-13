@@ -14,7 +14,7 @@ struct Notification {
     };
 
     Type type;
-    std::optional<Id> playerId;
+    std::string playerNickname;
     std::string extraInfo;
 };
 
