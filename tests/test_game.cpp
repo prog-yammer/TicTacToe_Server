@@ -7,8 +7,8 @@
 struct GameTestFixture {
     GameTestFixture()
     {
-        player1 = playerManager.createPlayer();
-        player2 = playerManager.createPlayer();
+        player1 = playerManager.createPlayer("p1");
+        player2 = playerManager.createPlayer("p2");
 
         player1->setNotificationHandler([this](const Notification& notification) {
             notifications1.push_back(notification);
@@ -46,7 +46,7 @@ BOOST_FIXTURE_TEST_CASE(JoinTest, GameTestFixture)
 
     BOOST_TEST_CHECK(notifications1.size(), 1);
     BOOST_CHECK(notifications1[0].type == Notification::Type::PlayerJoined);
-    BOOST_CHECK(notifications1[0].playerId == player2->id());
+    BOOST_CHECK(notifications1[0].playerNickname == player2->nickname());
 
     BOOST_TEST(notifications2.empty());
 
@@ -78,7 +78,7 @@ BOOST_FIXTURE_TEST_CASE(LeaveTest, GameTestFixture)
 
     status = gameManager.addPlayerToGame(player2, gameId);
     BOOST_TEST(status);
-    notifications1.clear(); // remove PlayerLeft notification
+    notifications1.clear(); // remove PlayerJoined notification
 
     status = gameManager.leavePlayerFromGame(player2);
     BOOST_TEST(status);
@@ -86,16 +86,11 @@ BOOST_FIXTURE_TEST_CASE(LeaveTest, GameTestFixture)
     BOOST_CHECK(!player1->isInGame());
     BOOST_CHECK(!player2->isInGame());
 
-    BOOST_TEST_CHECK(notifications1.size(), 2);
-    BOOST_CHECK(notifications1[0].type == Notification::Type::PlayerLeft);
-    BOOST_CHECK(notifications1[0].playerId == player2->id());
-
-    BOOST_CHECK(notifications1[1].type == Notification::Type::GameEnded);
-    BOOST_CHECK(notifications1[1].playerId == player1->id());
-
     BOOST_TEST_CHECK(notifications1.size(), 1);
-    BOOST_CHECK(notifications2[0].type == Notification::Type::GameEnded);
-    BOOST_CHECK(notifications2[0].playerId == player1->id());
+    BOOST_CHECK(notifications1[0].type == Notification::Type::PlayerLeft);
+    BOOST_CHECK(notifications1[0].playerNickname == player2->nickname());
+
+    BOOST_TEST_CHECK(notifications1.size(), 0);
 }
 
 BOOST_FIXTURE_TEST_CASE(JoinAfterLeaveTest, GameTestFixture)
@@ -140,30 +135,33 @@ BOOST_FIXTURE_TEST_CASE(MakeMoveTest, GameTestFixture)
     BOOST_TEST(status);
     BOOST_TEST_CHECK(notifications2.size(), 1);
     BOOST_CHECK(notifications2[0].type == Notification::Type::PlayerMoved);
-    BOOST_CHECK(notifications2[0].playerId == player1->id());
+    BOOST_CHECK(notifications2[0].playerNickname == player1->nickname());
     BOOST_CHECK(notifications2[0].extraInfo == "0 0 X");
 
+    notifications1.clear();
     status = gameManager.makeMove(player2, 0, 1);
     BOOST_TEST(status);
     BOOST_TEST_CHECK(notifications1.size(), 1);
     BOOST_CHECK(notifications1[0].type == Notification::Type::PlayerMoved);
-    BOOST_CHECK(notifications1[0].playerId == player2->id());
+    BOOST_CHECK(notifications1[0].playerNickname == player2->nickname());
     BOOST_CHECK(notifications1[0].extraInfo == "0 1 O");
 
+    notifications2.clear();
     status = gameManager.makeMove(player1, 1, 0);
     BOOST_TEST(status);
     BOOST_TEST(status);
-    BOOST_TEST_CHECK(notifications2.size(), 2);
-    BOOST_CHECK(notifications2[1].type == Notification::Type::PlayerMoved);
-    BOOST_CHECK(notifications2[1].playerId == player1->id());
-    BOOST_CHECK(notifications2[1].extraInfo == "1 0 X");
+    BOOST_TEST_CHECK(notifications2.size(), 1);
+    BOOST_CHECK(notifications2[0].type == Notification::Type::PlayerMoved);
+    BOOST_CHECK(notifications2[0].playerNickname == player1->nickname());
+    BOOST_CHECK(notifications2[0].extraInfo == "1 0 X");
 
+    notifications1.clear();
     status = gameManager.makeMove(player2, 1, 1);
     BOOST_TEST(status);
-    BOOST_TEST_CHECK(notifications1.size(), 2);
-    BOOST_CHECK(notifications1[1].type == Notification::Type::PlayerMoved);
-    BOOST_CHECK(notifications1[1].playerId == player2->id());
-    BOOST_CHECK(notifications1[1].extraInfo == "1 1 O");
+    BOOST_TEST_CHECK(notifications1.size(), 1);
+    BOOST_CHECK(notifications1[0].type == Notification::Type::PlayerMoved);
+    BOOST_CHECK(notifications1[0].playerNickname == player2->nickname());
+    BOOST_CHECK(notifications1[0].extraInfo == "1 1 O");
 }
 
 BOOST_FIXTURE_TEST_CASE(NotTurnMakeMoveTest, GameTestFixture)
@@ -242,11 +240,11 @@ BOOST_FIXTURE_TEST_CASE(WinGameTest, GameTestFixture)
 
     BOOST_TEST(notifications1.size(), 3); // 2 opponent's moves, 1 GameEnded notification
     BOOST_CHECK(notifications1.back().type == Notification::Type::GameEnded);
-    BOOST_CHECK(notifications1.back().playerId == player1->id());
+    BOOST_CHECK(notifications1.back().playerNickname == player1->nickname());
 
     BOOST_TEST(notifications2.size(), 4); // 3 opponent's moves, 1 GameEnded notification
     BOOST_CHECK(notifications2.back().type == Notification::Type::GameEnded);
-    BOOST_CHECK(notifications2.back().playerId == player1->id());
+    BOOST_CHECK(notifications2.back().playerNickname == player1->nickname());
 }
 
 BOOST_FIXTURE_TEST_CASE(DrawGameTest, GameTestFixture)
@@ -280,9 +278,9 @@ BOOST_FIXTURE_TEST_CASE(DrawGameTest, GameTestFixture)
 
     BOOST_TEST(notifications1.size(), 5); // 4 opponent's moves, 1 GameEnded notification
     BOOST_CHECK(notifications1.back().type == Notification::Type::GameEnded);
-    BOOST_CHECK(!notifications1.back().playerId.has_value());
+    BOOST_CHECK(notifications1.back().playerNickname.empty());
 
     BOOST_TEST(notifications2.size(), 6); // 5 opponent's moves, 1 GameEnded notification
     BOOST_CHECK(notifications2.back().type == Notification::Type::GameEnded);
-    BOOST_CHECK(!notifications2.back().playerId.has_value());
+    BOOST_CHECK(notifications2.back().playerNickname.empty());
 }

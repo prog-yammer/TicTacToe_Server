@@ -202,19 +202,11 @@ BOOST_FIXTURE_TEST_CASE(LeaveGameTest, WsTestFixture)
 
     client1.sendMessage(InCommandCode::LEAVE_GAME);
     auto message = client1.receiveMessage();
-    BOOST_CHECK_EQUAL(message.code, OutCommandCode::GAME_ENDED);
-    BOOST_CHECK_EQUAL(message.message, nickname2);
-
-    message = client1.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::LEFT_GAME);
 
     message = client2.receiveMessage();
-    BOOST_CHECK_EQUAL(message.code, OutCommandCode::OPPONENT_LEFT);
-    BOOST_CHECK_EQUAL(message.message, nickname1);
-
-    message = client2.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::GAME_ENDED);
-    BOOST_CHECK_EQUAL(message.message, nickname2);
+    BOOST_CHECK_EQUAL(std::stoi(message.message), GameEndedCode::OPPONENT_LEFT);
 }
 
 BOOST_FIXTURE_TEST_CASE(DisconnectFromGameTest, WsTestFixture)
@@ -225,12 +217,8 @@ BOOST_FIXTURE_TEST_CASE(DisconnectFromGameTest, WsTestFixture)
     client1.disconnect();
 
     auto message = client2.receiveMessage();
-    BOOST_CHECK_EQUAL(message.code, OutCommandCode::OPPONENT_LEFT);
-    BOOST_CHECK_EQUAL(message.message, nickname1);
-
-    message = client2.receiveMessage();
-    BOOST_CHECK_EQUAL(message.code, OutCommandCode::GAME_ENDED);
-    BOOST_CHECK_EQUAL(message.message, nickname2);
+    BOOST_CHECK_EQUAL(message.code, OutCommandCode::GAME_ENDED); // TODO
+    BOOST_CHECK_EQUAL(std::stoi(message.message), GameEndedCode::OPPONENT_LEFT);
 }
 
 BOOST_FIXTURE_TEST_CASE(MakeMoveTest, WsTestFixture)
@@ -243,7 +231,7 @@ BOOST_FIXTURE_TEST_CASE(MakeMoveTest, WsTestFixture)
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::MOVED);
 
     message = client2.receiveMessage();
-    BOOST_CHECK_EQUAL(message.code, OutCommandCode::OPPONENT_MOVED);
+    BOOST_CHECK_EQUAL(message.code, OutCommandCode::MOVED);
     BOOST_CHECK_EQUAL(message.message, "0 0 X " + nickname1);
 
     client2.sendMessage(InCommandCode::MOVE, "0 1");
@@ -251,7 +239,7 @@ BOOST_FIXTURE_TEST_CASE(MakeMoveTest, WsTestFixture)
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::MOVED);
 
     message = client1.receiveMessage();
-    BOOST_CHECK_EQUAL(message.code, OutCommandCode::OPPONENT_MOVED);
+    BOOST_CHECK_EQUAL(message.code, OutCommandCode::MOVED);
     BOOST_CHECK_EQUAL(message.message, "0 1 O " + nickname2);
 }
 
@@ -272,7 +260,7 @@ BOOST_FIXTURE_TEST_CASE(TurnMoveTest, WsTestFixture)
     BOOST_CHECK_EQUAL(*message.errorCode, ErrorCode::ERROR_MOVE);
 
     message = client2.receiveMessage();
-    BOOST_CHECK_EQUAL(message.code, OutCommandCode::OPPONENT_MOVED);
+    BOOST_CHECK_EQUAL(message.code, OutCommandCode::MOVED);
     BOOST_CHECK_EQUAL(message.message, "0 0 X " + nickname1);
 }
 
@@ -328,15 +316,16 @@ BOOST_FIXTURE_TEST_CASE(WinGameTest, WsTestFixture)
     client2.receiveMessage();
 
     client1.sendMessage(InCommandCode::MOVE, "0 2");
+    client1.receiveMessage();
     client2.receiveMessage();
 
     auto message = client1.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::GAME_ENDED);
-    BOOST_CHECK_EQUAL(message.message, nickname1);
+    BOOST_CHECK_EQUAL(message.message, std::to_string(GameEndedCode::WIN) + ' ' + nickname1);
 
     message = client2.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::GAME_ENDED);
-    BOOST_CHECK_EQUAL(message.message, nickname1);
+    BOOST_CHECK_EQUAL(message.message, std::to_string(GameEndedCode::WIN) + ' ' + nickname1);
 }
 
 BOOST_FIXTURE_TEST_CASE(DrawGameTest, WsTestFixture)
@@ -377,13 +366,14 @@ BOOST_FIXTURE_TEST_CASE(DrawGameTest, WsTestFixture)
     client2.receiveMessage();
 
     client1.sendMessage(InCommandCode::MOVE, "2 2");
+    client1.receiveMessage();
     client2.receiveMessage();
 
     auto message = client1.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::GAME_ENDED);
-    BOOST_CHECK_EQUAL(message.message, "draw");
+    BOOST_CHECK_EQUAL(std::stoi(message.message), GameEndedCode::DRAW);
 
     message = client2.receiveMessage();
     BOOST_CHECK_EQUAL(message.code, OutCommandCode::GAME_ENDED);
-    BOOST_CHECK_EQUAL(message.message, "draw");
+    BOOST_CHECK_EQUAL(std::stoi(message.message), GameEndedCode::DRAW);
 }

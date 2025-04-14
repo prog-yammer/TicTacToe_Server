@@ -36,6 +36,9 @@ bool GameManager::leavePlayerFromGame(std::shared_ptr<Player> player)
         return false;
 
     bool result = game->leave(player);
+    if (result)
+        removeGame(game->id());
+
     return result;
 }
 

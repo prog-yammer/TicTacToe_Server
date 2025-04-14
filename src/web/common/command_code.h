@@ -18,9 +18,7 @@ enum OutCommandCode {
     LEFT_GAME       = 4,
     MOVED           = 5,
     OPPONENT_JOINED = 6,
-    OPPONENT_LEFT   = 7,
-    OPPONENT_MOVED  = 8,
-    GAME_ENDED      = 9,
+    GAME_ENDED      = 7,
 };
 
 enum ErrorCode {
@@ -32,4 +30,10 @@ enum ErrorCode {
     ERROR_CREATE       = 4,
     ERROR_LEAVE        = 5,
     ERROR_MOVE         = 6,
+};
+
+enum GameEndedCode {
+    DRAW          = 0,
+    OPPONENT_LEFT = 1,
+    WIN           = 2,
 };

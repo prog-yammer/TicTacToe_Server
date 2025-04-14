@@ -67,9 +67,16 @@ bool Game::leave(std::shared_ptr<Player> player) {
         auto winner = (player == player1_) ? player2_ : player1_;
         winnerId = winner->id();
         winner->notify(Notification{
-                .type = Notification::Type::PlayerLeft,
-                .playerNickname = player->nickname(),
+            .type = Notification::Type::PlayerLeft,
+            .playerNickname = player->nickname(),
         });
+
+        player1_->leaveGame();
+        player2_->leaveGame();
+
+        isOver_ = true;
+
+        return true;
     }
 
     player->leaveGame();
@@ -86,12 +93,13 @@ bool Game::makeMove(Id playerId, int x, int y)
     }
 
     board_[x][y] = getCurCell();
-    auto otherPlayer = (player1_->id() == playerId) ? player2_ : player1_;
-    otherPlayer->notify(Notification {
+    Notification notification {
         .type = Notification::Type::PlayerMoved,
         .playerNickname = (player1_->id() == playerId) ? player1_->nickname() : player2_->nickname(),
         .extraInfo = (boost::format("%d %d %s") % x % y % (board_[x][y] == Cell::X ? 'X' : 'O')).str()
-    });
+    };
+    player1_->notify(notification);
+    player2_->notify(notification);
 
     auto gameStatus = checkFinish();
     if (gameStatus) {
@@ -148,12 +156,14 @@ void Game::endGame()
         .playerNickname = winnerId ? ((player1_->id() == winnerId) ? player1_->nickname() : player2_->nickname()) : "",
     };
 
-    if (player1_) {
+    if (player1_)
         player1_->leaveGame();
-        player1_->notify(notification);
-    }
-    if (player2_) {
+
+    if (player2_)
         player2_->leaveGame();
+
+    if (player1_ && player2_) {
+        player1_->notify(notification);
         player2_->notify(notification);
     }
 }

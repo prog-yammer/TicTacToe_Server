@@ -57,7 +57,9 @@ void Session::onReadAsync()
             auto data = boost::beast::buffers_to_string(self->buf_.data());
             self->buf_.consume(self->buf_.size());
 
-            self->writeAsync(processCommand(data, self));
+            auto answer = processCommand(data, self);
+            if (!answer.empty())
+                self->writeAsync(answer);
             self->onReadAsync();
         });
 }
@@ -150,10 +152,11 @@ std::string Session::processCommand(const std::string& command, std::shared_ptr<
             case JOIN_GAME: {
                 auto gameId = std::stoul(parts[1]);
                 bool res = session->gameManager_->addPlayerToGame(session->player_, gameId);
-                if (!res) {
+                auto game = session->gameManager_->getGame(gameId);
+                if (!res || !game) {
                     ss << OutCommandCode::ERROR << ' ' << ErrorCode::ERROR_JOIN;
                 } else {
-                    ss << OutCommandCode::JOINED_GAME;
+                    ss << OutCommandCode::JOINED_GAME << ' ' << gameId << ' ' << game->player1()->nickname();
                 }
                 break;
             }
@@ -177,9 +180,8 @@ std::string Session::processCommand(const std::string& command, std::shared_ptr<
                 if (!res) {
                     ss << OutCommandCode::ERROR << ' ' << ErrorCode::ERROR_MOVE;
                 } else {
-                    ss << OutCommandCode::MOVED;
+                    return ""; // MOVES might sended by notification
                 }
-                break;
             }
             default:
                 ss << OutCommandCode::ERROR << ' ' << ErrorCode::UNKNOWN_COMMAND;
@@ -200,13 +202,15 @@ std::string Session::processNotification(const Notification& notification, std::
             ss << OutCommandCode::OPPONENT_JOINED << ' ' << opponentNickname;
             break;
         case Notification::Type::PlayerLeft:
-            ss << OutCommandCode::OPPONENT_LEFT << ' ' << opponentNickname;
+            ss << OutCommandCode::GAME_ENDED << ' ' << GameEndedCode::OPPONENT_LEFT;
             break;
         case Notification::Type::PlayerMoved:
-            ss << OutCommandCode::OPPONENT_MOVED << ' ' << notification.extraInfo << ' ' << opponentNickname;
+            ss << OutCommandCode::MOVED << ' ' << notification.extraInfo << ' ' << opponentNickname;
             break;
         case Notification::Type::GameEnded:
-            ss << OutCommandCode::GAME_ENDED << ' ' << (opponentNickname.empty() ? "draw" : opponentNickname);
+            ss << OutCommandCode::GAME_ENDED << ' ';
+            if (opponentNickname.empty()) ss << GameEndedCode::DRAW;
+            else ss << GameEndedCode::WIN << ' ' << opponentNickname;
             break;
     }
 
